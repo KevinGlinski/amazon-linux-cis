@@ -50,7 +50,7 @@ def set_mount_options():
 
 def set_audit_rules():
     
-    options = ```        
+    options = """        
         # 5.2.4 Record Events That Modify Date and Time Information
         -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
         -a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change
@@ -122,7 +122,7 @@ def set_audit_rules():
 
         # 5.2.18 Make the Audit Configuration Immutable
         -e 2
-        ```
+        """
     
     with open('/etc/audit/rules.d/audit.rules', 'w') as f:
         f.write('{}\n'.format(record))
