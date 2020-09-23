@@ -424,7 +424,7 @@ def configure_iptables():
     Package('iptables-services').install()
     exec_shell([
         'ip6tables -A INPUT -i lo -j ACCEPT',
-        'ip6tables -A OUTPUT -o lo -j ACCEPT' 
+        'ip6tables -A OUTPUT -o lo -j ACCEPT' ,
         'ip6tables -A INPUT -s ::1 -j DROP ',
         'ip6tables -P INPUT DROP',
         'ip6tables -P OUTPUT DROP',
