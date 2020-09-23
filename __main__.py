@@ -48,6 +48,85 @@ def set_mount_options():
         for record in options.values():
             f.write('{}\n'.format(record))
 
+def set_audit_rules():
+    
+    options = ```        
+        # 5.2.4 Record Events That Modify Date and Time Information
+        -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
+        -a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change
+        -a always,exit -F arch=b64 -S clock_settime -k time-change
+        -a always,exit -F arch=b32 -S clock_settime -k time-change
+        -w /etc/localtime -p wa -k time-change
+
+        # 5.2.5 Record Events That Modify User/Group Information
+        -w /etc/group -p wa -k identity
+        -w /etc/passwd -p wa -k identity
+        -w /etc/gshadow -p wa -k identity
+        -w /etc/shadow -p wa -k identity
+        -w /etc/security/opasswd -p wa -k identity
+
+        # 5.2.6 Record Events That Modify the System's Network Environment
+        -a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
+        -a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale
+        -w /etc/issue -p wa -k system-locale
+        -w /etc/issue.net -p wa -k system-locale
+        -w /etc/hosts -p wa -k system-locale
+        -w /etc/sysconfig/network -p wa -k system-locale
+
+        # 5.2.7 Record Events That Modify the System's Mandatory Access Controls
+        -w /etc/selinux/ -p wa -k MAC-policy
+
+        # 5.2.8 Collect Login and Logout Events
+        -w /var/log/faillog -p wa -k logins
+        -w /var/log/lastlog -p wa -k logins
+        -w /var/log/tallylog -p wa -k logins
+
+        # 5.2.9 Collect Session Initiation Information
+        -w /var/run/utmp -p wa -k session
+        -w /var/log/wtmp -p wa -k session
+        -w /var/log/btmp -p wa -k session
+
+        # 5.2.10 Collect Discretionary Access Control Permission Modification Events
+        -a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod
+        -a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod
+        -a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod
+        -a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod
+        -a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
+        -a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
+
+        # 5.2.11 Collect Unsuccessful Unauthorized Access Attempts to Files
+        -a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+        -a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+        -a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+        -a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+
+        # 5.2.13 Collect Successful File System Mounts
+        -a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+        -a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+
+        # 5.2.14 Collect File Deletion Events by User
+        -a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+        -a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+
+        # 5.2.15 Collect Changes to System Administration Scope
+        -w /etc/sudoers -p wa -k scope
+
+        # 5.2.16 Collect System Administrator Actions
+        -w /var/log/sudo.log -p wa -k actions
+
+        # 5.2.17 Collect Kernel Module Loading and Unloading
+        -w /sbin/insmod -p x -k modules
+        -w /sbin/rmmod -p x -k modules
+        -w /sbin/modprobe -p x -k modules
+        -a always,exit -F arch=b64 -S init_module -S delete_module -k modules
+
+        # 5.2.18 Make the Audit Configuration Immutable
+        -e 2
+        ```
+    
+    with open('/etc/audit/rules.d/audit.rules', 'w') as f:
+        f.write('{}\n'.format(record))
+
 
 def ensure_sticky_bit():
     """1.1.18 Ensure sticky bit is set on all world - writable directories"""
@@ -82,7 +161,9 @@ def secure_boot_settings():
     if os.path.isfile('/boot/grub/menu.lst'):
         exec_shell([
             'chown root:root /boot/grub/menu.lst',
-            'chmod og-rwx /boot/grub/menu.lst'
+            'chmod og-rwx /boot/grub/menu.lst',
+            'chown root:root /boot/grub2/grub.cfg',
+            'chmod og-rwx /boot/grub2/grub.cfg' 
         ])
 
     PropertyFile('/etc/sysconfig/init', '=').override({
@@ -333,7 +414,20 @@ def configure_iptables():
         'iptables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT',
         'iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT',
         'iptables -A INPUT -p tcp --dport 22 -m state --state NEW -j ACCEPT',
+        'iptables -A INPUT -p tcp --dport 3306 -m state --state NEW -j ACCEPT',
+        'iptables -A INPUT -p tcp --dport 8443 -m state --state NEW -j ACCEPT',
+        'iptables -A INPUT -p tcp --dport 8000 -m state --state NEW -j ACCEPT',
         'iptables-save'
+        
+    ])
+    
+    Package('ip6tables').install()
+    exec_shell([
+        'ip6tables -A INPUT -i lo -j ACCEPT',
+        'ip6tables -A OUTPUT -o lo -j ACCEPT' 
+        'ip6tables -A INPUT -s ::1 -j DROP ',
+        'ip6tables -P INPUT DROP# ip6tables -P OUTPUT DROP# ip6tables -P FORWARD DROP',     
+        'ip6tables-save'
     ])
 
 
@@ -421,7 +515,8 @@ def configure_sshd():
         'ClientAliveCountMax': '0',
         'LoginGraceTime': '60',
         'AllowUsers': 'ec2-user',
-        'Banner': '/etc/issue.net'
+        'Banner': '/etc/issue.net',
+        'KexAlgorithms':'curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256'
     }).write()
 
 
@@ -598,6 +693,7 @@ def main():
     configure_password_parmas()
     configure_umask()
     configure_su()
+    set_audit_rules()
 
 
 if __name__ == '__main__':
